@@ -10,10 +10,19 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
     public class AssignmentDb : IDisposable
     {
         private readonly MySqlConnection _connection;
+        private List<NumberRange> _myDB;
+
 
         internal AssignmentDb(MySqlConnection connection)
         {
             _connection = connection;
+            _myDB = new ()
+            {
+                new NumberRange(0, 1000),
+                new NumberRange(1800, 3000),
+                new NumberRange(1097, 1701),
+                new NumberRange(500, 1300),
+            };
         }
 
         /// <summary>
@@ -22,19 +31,14 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
         /// <param name="skip">How many records to skip</param>
         /// <param name="length">How many records to take</param>
         /// <returns></returns>
-        public List<NumberRange> GetOccupiedRanges(int skip, int length)
+        public NumberRange[] GetOccupiedRanges(int skip, int length)
         {
-            return new List<NumberRange>()
-            {
-                new NumberRange(0, 100),
-                new NumberRange(150, 300),
-                new NumberRange(50, 130),
-            };
+            return _myDB.ToArray();
         }
 
-        public void OccupyRange(int skip, int length)
+        public void OccupyRange(NumberRange numberRange)
         {
-
+            _myDB.Add(numberRange);
         }
 
         public void Dispose()

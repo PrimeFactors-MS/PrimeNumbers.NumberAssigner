@@ -2,12 +2,12 @@
 {
     public struct NumberRange
     {
-        public NumberRange(int start, int end)
+        public NumberRange(ulong start, ulong end)
         {
             Start = start;
             End = end;
         }
-        public int Start { get; set; }
-        public int End { get; set; }
+        public ulong Start { get; set; }
+        public ulong End { get; set; }
     }
 }
