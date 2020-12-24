@@ -16,8 +16,8 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
 
         public AssignmentDb CreateConnection()
         {
-            //var connection = MySqlConnector.ConnectToDb(_connectionParameters);
-            return new AssignmentDb(null);
+            var connection = MySqlConnector.ConnectToDb(_connectionParameters);
+            return new AssignmentDb(connection);
         }
     }
 }

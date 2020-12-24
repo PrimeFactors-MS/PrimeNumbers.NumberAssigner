@@ -19,9 +19,9 @@ namespace PrimeNumbers.NumberAssigner.API.Controllers
         }
 
         [HttpGet]
-        public NumberRange GetNumberAssignment()
+        public async Task<RangeAssignment> GetNumberAssignment()
         {
-            return _availableRangeFinder.GetRangeAssignment();
+            return await _availableRangeFinder.GetRangeAssignment();
         }
     }
 }

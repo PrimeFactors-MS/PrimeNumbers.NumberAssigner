@@ -2,9 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace PrimeNumbers.NumberAssigner.Core
 {
+
     public class AvailableRangeFinder
     {
         const int RECORDS_PER_DRAW = 100;
@@ -16,12 +18,12 @@ namespace PrimeNumbers.NumberAssigner.Core
             _assignmentDb = assignmentDb;
         }
 
-        public NumberRange GetRangeAssignment()
+        public async Task<RangeAssignment> GetRangeAssignment()
         {
             NumberRange availableRange;
             AvailableRangeResult searchResult;
 
-            searchResult = FindHoleRangeInDb();
+            searchResult = await FindHoleRangeInDb();
 
             if (searchResult.FoundAvailableRange)
             {
@@ -37,16 +39,16 @@ namespace PrimeNumbers.NumberAssigner.Core
                 availableRange = new NumberRange(endOfRange, endOfRange + MAX_RANGE_ASSIGNMENT - 1);
             }
 
-            _assignmentDb.OccupyRange(availableRange);
+            uint workerId = await _assignmentDb.OccupyRange(availableRange);
 
-            return availableRange;
+            return new RangeAssignment(workerId, availableRange);
         }
 
 
         /// <summary>
         /// Tries finding free range *between* occupied ranges in db
         /// </summary>
-        private AvailableRangeResult FindHoleRangeInDb()
+        private async Task<AvailableRangeResult> FindHoleRangeInDb()
         {
             int iterations = 0;
 
@@ -56,7 +58,7 @@ namespace PrimeNumbers.NumberAssigner.Core
             NumberRange[] occupiedRanges;
             do
             {
-                occupiedRanges = _assignmentDb.GetOccupiedRanges(iterations * RECORDS_PER_DRAW, RECORDS_PER_DRAW);
+                occupiedRanges = await _assignmentDb.GetOccupiedRanges(iterations * RECORDS_PER_DRAW, RECORDS_PER_DRAW);
 
                 sliceResult = FindFreeRangeBetweenOccupied(occupiedRanges, previousOccupiedRange);
 
@@ -81,7 +83,7 @@ namespace PrimeNumbers.NumberAssigner.Core
         /// <param name="occupiedRanges">List of occopied ranges to search between</param>
         /// <param name="preOccupiedRange">Total range occupied from previous slices</param>
         /// <returns></returns>
-        private AvailableRangeResult FindFreeRangeBetweenOccupied(NumberRange[] occupiedRanges, NumberRange preOccupiedRange)
+        private static AvailableRangeResult FindFreeRangeBetweenOccupied(NumberRange[] occupiedRanges, NumberRange preOccupiedRange)
         {
             if (occupiedRanges.Length == 0) { return new AvailableRangeResult(false, preOccupiedRange, null); }
 
