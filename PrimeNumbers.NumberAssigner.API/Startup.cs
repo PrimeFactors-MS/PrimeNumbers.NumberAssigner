@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using MySql.Data.MySqlClient;
 using PrimeNumbers.NumberAssigner.Core;
 using PrimeNumbers.NumberAssigner.Core.DAL;
 using System;
@@ -18,7 +19,7 @@ namespace PrimeNumbers.NumberAssigner.API
 {
     public class Startup
     {
-        private AssignmentDb _assignmentDb;
+        private ConnectionFactory _connectionFactory;
 
         public Startup(IConfiguration configuration)
         {
@@ -39,8 +40,10 @@ namespace PrimeNumbers.NumberAssigner.API
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "PrimeNumbers.NumberAssigner.API", Version = "v1" });
             });
 
-            _assignmentDb = CreateAssignmentDb();
-            services.AddSingleton(new AvailableRangeFinder(_assignmentDb));
+            _connectionFactory = CreateConnectionFactory();
+            AssignmentDb assignmentDb = new(_connectionFactory);
+            AvailableRangeAssigner availableRangeAssigner = new();
+            services.AddSingleton(new AssignmentManager(assignmentDb, availableRangeAssigner));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -68,10 +71,10 @@ namespace PrimeNumbers.NumberAssigner.API
 
         private void OnStop()
         {
-            _assignmentDb.Dispose();
+            _connectionFactory.Dispose();
         }
 
-        private static AssignmentDb CreateAssignmentDb()
+        private static ConnectionFactory CreateConnectionFactory()
         {
             var connectionParameters = new ConnectionParameters
             {
@@ -81,7 +84,7 @@ namespace PrimeNumbers.NumberAssigner.API
                 Username = "root",
                 Password = "qwer1234"
             };
-            return new AssignmentDbFactory(connectionParameters).CreateConnection();
+            return new ConnectionFactory(connectionParameters);
         }
     }
 }

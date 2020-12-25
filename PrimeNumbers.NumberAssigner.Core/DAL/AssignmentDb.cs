@@ -9,22 +9,13 @@ using System.Threading.Tasks;
 namespace PrimeNumbers.NumberAssigner.Core.DAL
 {
 
-    public class AssignmentDb : IDisposable
+    public class AssignmentDb
     {
-        private readonly MySqlConnection _connection;
-        private readonly List<NumberRange> _myDB;
+        private readonly ConnectionFactory _connectionFactory;
 
-
-        internal AssignmentDb(MySqlConnection connection)
+        public AssignmentDb(ConnectionFactory connectionFactory)
         {
-            _connection = connection;
-            _myDB = new ()
-            {
-                new NumberRange(0, 1000),
-                new NumberRange(1800, 3000),
-                new NumberRange(1097, 1701),
-                new NumberRange(500, 1300),
-            };
+            _connectionFactory = connectionFactory;
         }
 
         /// <summary>
@@ -35,7 +26,8 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
         /// <returns></returns>
         public async Task<NumberRange[]> GetOccupiedRanges(int skip, int length)
         {
-            using MySqlCommand command = new("GetOccupiedRanges", _connection)
+            using MySqlConnection connection = await _connectionFactory.CreateConnection();
+            using MySqlCommand command = new("GetOccupiedRanges", connection)
             {
                 CommandType = CommandType.StoredProcedure
             };
@@ -45,8 +37,8 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
             command.Parameters["maxLength"].Value = length;
 
             List<NumberRange> numberRangeList = new();
-            using (MySqlDataReader resultReader = (MySqlDataReader)await command.ExecuteReaderAsync())
             {
+                using MySqlDataReader resultReader = (MySqlDataReader)await command.ExecuteReaderAsync();
                 while (await resultReader.ReadAsync())
                 {
                     numberRangeList.Add(new NumberRange
@@ -62,7 +54,8 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
 
         public async Task<uint> OccupyRange(NumberRange numberRange)
         {
-            using MySqlCommand command = new("occupyRange", _connection)
+            using MySqlConnection connection = await _connectionFactory.CreateConnection();
+            using MySqlCommand command = new("occupyRange", connection)
             {
                 CommandType = CommandType.StoredProcedure
             };
@@ -78,12 +71,18 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
             return (uint)command.Parameters["workerId"].Value;            
         }
 
-
-
-        public void Dispose()
+        public async Task UpdateKeepAlive(uint workerId)
         {
-            _connection?.Dispose();
-            GC.SuppressFinalize(this);
+            using MySqlConnection connection = await _connectionFactory.CreateConnection();
+            using MySqlCommand command = new("updateKeepAlive", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            command.Parameters.Add("workerId", MySqlDbType.UInt32);
+            command.Parameters["workerId"].Value = workerId;
+
+            await command.ExecuteNonQueryAsync();
         }
     }
 }

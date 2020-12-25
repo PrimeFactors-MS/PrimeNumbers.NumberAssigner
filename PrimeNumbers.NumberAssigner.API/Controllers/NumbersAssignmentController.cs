@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PrimeNumbers.NumberAssigner.API.Models;
 using PrimeNumbers.NumberAssigner.Core;
 using System;
 using System.Collections.Generic;
@@ -11,17 +12,24 @@ namespace PrimeNumbers.NumberAssigner.API.Controllers
     [Route("[controller]/[action]")]
     public class NumbersAssignmentController : Controller
     {
-        private readonly AvailableRangeFinder _availableRangeFinder;
+        private readonly AssignmentManager _assignmentManager;
 
-        public NumbersAssignmentController(AvailableRangeFinder availableRangeFinder)
+        public NumbersAssignmentController(AssignmentManager assignmentManager)
         {
-            _availableRangeFinder = availableRangeFinder;
+            _assignmentManager = assignmentManager;
         }
 
         [HttpGet]
-        public async Task<RangeAssignment> GetNumberAssignment()
+        public async Task<ActionResult<RangeAssignment>> GetNumberAssignment()
         {
-            return await _availableRangeFinder.GetRangeAssignment();
+            return Ok(await _assignmentManager.GetRangeAssignment());
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> SendKeepAlive([FromBody] KeepAliveRequest keepAliveRequest)
+        {
+            await _assignmentManager.UpdateKeepAlive(keepAliveRequest.WorkerId);
+            return Ok();
         }
     }
 }

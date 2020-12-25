@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 
 namespace PrimeNumbers.NumberAssigner.Core.DAL
 {
     static class MySqlConnector
     {
-        public static MySqlConnection ConnectToDb(ConnectionParameters connectionParameters)
+        public static async Task<MySqlConnection> ConnectToDb(ConnectionParameters connectionParameters)
         {
             string connStr = GetConnectionString(connectionParameters);
 
             MySqlConnection dbConnection = new MySqlConnection(connStr);
-            dbConnection.Open();
+            await dbConnection.OpenAsync();
 
             return dbConnection;
         }

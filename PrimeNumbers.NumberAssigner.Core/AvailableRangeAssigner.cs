@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 namespace PrimeNumbers.NumberAssigner.Core
 {
 
-    public class AvailableRangeFinder
+    public class AvailableRangeAssigner
     {
         const int RECORDS_PER_DRAW = 100;
         const int MAX_RANGE_ASSIGNMENT = 100;
-        private readonly AssignmentDb _assignmentDb;
+        private AssignmentDb _assignmentDb;
 
-        public AvailableRangeFinder(AssignmentDb assignmentDb)
+        public void SetDb(AssignmentDb assignmentDb)
         {
             _assignmentDb = assignmentDb;
         }
