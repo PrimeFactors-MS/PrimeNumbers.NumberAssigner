@@ -22,5 +22,7 @@ namespace PrimeNumbers.NumberAssigner.Core
         public async Task<RangeAssignment> GetRangeAssignment() => await _availableRangeAssigner.GetRangeAssignment();
 
         public async Task UpdateKeepAlive(uint workerId) => await _assignmentDb.UpdateKeepAlive(workerId);
+
+        public async Task FinishOngoingAssignment(uint workerId) => await _assignmentDb.FinishOngoingAssignment(workerId);
     }
 }

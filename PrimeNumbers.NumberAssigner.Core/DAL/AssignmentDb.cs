@@ -68,7 +68,7 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
 
             await command.ExecuteNonQueryAsync();
 
-            return (uint)command.Parameters["workerId"].Value;            
+            return (uint)command.Parameters["workerId"].Value;
         }
 
         public async Task UpdateKeepAlive(uint workerId)
@@ -83,6 +83,52 @@ namespace PrimeNumbers.NumberAssigner.Core.DAL
             command.Parameters["workerId"].Value = workerId;
 
             await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task<NumberRange> FinishOngoingAssignment(uint workerId)
+        {
+            using MySqlConnection connection = await _connectionFactory.CreateConnection();
+
+            NumberRange numberRange = await GetOngoingAssignment(connection, workerId);
+            await AddProcessedRange(connection, numberRange);
+            await DeleteOngoingAssignment(connection, workerId);
+            
+            return numberRange;
+        }
+        
+        private static async Task<NumberRange> GetOngoingAssignment(MySqlConnection connection, uint workerId)
+        {
+            using MySqlCommand command = new ("SELECT rangeStart, rangeEnd FROM numbersinprogress WHERE workerId=@workerId LIMIT 1", connection);
+            command.Parameters.Add("@workerId", MySqlDbType.UInt32);
+            command.Parameters["@workerId"].Value = workerId;
+
+            using MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+            await reader.ReadAsync();
+            return new NumberRange(
+                start: (ulong)reader["rangeStart"],
+                end: (ulong)reader["rangeEnd"]
+                );
+        }
+
+        private static async Task DeleteOngoingAssignment(MySqlConnection connection, uint workerId)
+        {
+            using MySqlCommand command = new("DELETE FROM numbersinprogress WHERE workerId=@workerId LIMIT 1", connection);
+            command.Parameters.Add("@workerId", MySqlDbType.UInt32);
+            command.Parameters["@workerId"].Value = workerId;
+
+            await command.ExecuteNonQueryAsync();
+        }
+
+        private static async Task AddProcessedRange(MySqlConnection connection, NumberRange numberRange)
+        {
+            using MySqlCommand command = new("INSERT INTO numbersprocessed (`rangeStart`, `rangeEnd`) VALUES(@rangeStart, @rangeEnd)", connection);
+            command.Parameters.Add("@rangeStart", MySqlDbType.UInt64);
+            command.Parameters.Add("@rangeEnd", MySqlDbType.UInt64);
+            command.Parameters["@rangeStart"].Value = numberRange.Start;
+            command.Parameters["@rangeEnd"].Value = numberRange.End;
+
+            await command.ExecuteNonQueryAsync();
+
         }
     }
 }

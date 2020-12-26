@@ -31,5 +31,14 @@ namespace PrimeNumbers.NumberAssigner.API.Controllers
             await _assignmentManager.UpdateKeepAlive(keepAliveRequest.WorkerId);
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<ActionResult> FinishedAssignment([FromBody] FinishedAssignmentRequest request)
+        {
+            await _assignmentManager.FinishOngoingAssignment(request.WorkerId);
+            return Ok();
+        }
+
+
     }
 }
