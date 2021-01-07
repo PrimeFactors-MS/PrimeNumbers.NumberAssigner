@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PrimeNumbers.NumberAssigner.Core
@@ -12,6 +13,12 @@ namespace PrimeNumbers.NumberAssigner.Core
         const int RECORDS_PER_DRAW = 100;
         const int MAX_RANGE_ASSIGNMENT = 100;
         private AssignmentDb _assignmentDb;
+        private readonly SemaphoreSlim _assignmentSemaphore;
+
+        public AvailableRangeAssigner()
+        {
+            _assignmentSemaphore = new(1, 1);
+        }
 
         public void SetDb(AssignmentDb assignmentDb)
         {
@@ -21,25 +28,35 @@ namespace PrimeNumbers.NumberAssigner.Core
         public async Task<RangeAssignment> GetRangeAssignment()
         {
             NumberRange availableRange;
-            AvailableRangeResult searchResult;
+            uint workerId;
 
-            searchResult = await FindHoleRangeInDb();
+            await _assignmentSemaphore.WaitAsync();
 
-            if (searchResult.FoundAvailableRange)
+            try
             {
-                availableRange = searchResult.AvailableRange.Value;
-                if (availableRange.End - availableRange.Start + 1 > MAX_RANGE_ASSIGNMENT)
+                AvailableRangeResult searchResult = await FindHoleRangeInDb();
+
+                if (searchResult.FoundAvailableRange)
                 {
-                    availableRange.End = availableRange.Start + MAX_RANGE_ASSIGNMENT - 1;
+                    availableRange = searchResult.AvailableRange.Value;
+                    if (availableRange.End - availableRange.Start + 1 > MAX_RANGE_ASSIGNMENT)
+                    {
+                        availableRange.End = availableRange.Start + MAX_RANGE_ASSIGNMENT - 1;
+                    }
                 }
-            }
-            else
-            {
-                var endOfRange = searchResult.TotalOccupiedRange.Value.End;
-                availableRange = new NumberRange(endOfRange, endOfRange + MAX_RANGE_ASSIGNMENT - 1);
-            }
+                else
+                {
+                    var endOfRange = searchResult.TotalOccupiedRange.Value.End;
+                    availableRange = new NumberRange(endOfRange, endOfRange + MAX_RANGE_ASSIGNMENT - 1);
+                }
 
-            uint workerId = await _assignmentDb.OccupyRange(availableRange);
+                workerId = await _assignmentDb.OccupyRange(availableRange);
+
+            }
+            finally
+            {
+                _assignmentSemaphore.Release();
+            }
 
             return new RangeAssignment(workerId, availableRange);
         }

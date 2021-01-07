@@ -1,0 +1,39 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  name: number-assigner-service
+  labels:
+    app: number-assigner-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 30007
+    targetPort: 80
+    nodePort: 30017
+  selector:
+    app: number-assigner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: number-assigner
+spec:
+  selector:
+    matchLabels:
+      app: number-assigner
+  template:
+    metadata:
+      labels:
+        app: number-assigner
+        project: prime-numbers
+    spec:
+      containers:
+      - name: number-assigner
+        image: number-assigner:v1
+        imagePullPolicy: Never
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        ports:
+        - containerPort: 80

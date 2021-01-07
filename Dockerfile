@@ -8,6 +8,7 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
 WORKDIR /src
 COPY ["PrimeNumbers.NumberAssigner.API/PrimeNumbers.NumberAssigner.API.csproj", "PrimeNumbers.NumberAssigner.API/"]
+COPY ["PrimeNumbers.NumberAssigner.Core/PrimeNumbers.NumberAssigner.Core.csproj", "PrimeNumbers.NumberAssigner.Core/"]
 RUN dotnet restore "PrimeNumbers.NumberAssigner.API/PrimeNumbers.NumberAssigner.API.csproj"
 COPY . .
 WORKDIR "/src/PrimeNumbers.NumberAssigner.API"
